@@ -1,0 +1,8 @@
+{
+  "name": "threads-skill",
+  "description": "쓰레드(Threads) 계정 운영용 Claude 스킬 11개: 한국어 훅 공식 22개와 훅 점수기, 500자·연결글 검사기, 계정 평소 대비 배수로 찾는 벤치마킹, 출처 확인 정보글, 주간 계획, 답글, 프로필 채점, 공식 API 성과 분석, 한국어 AI 티 지우기. 글만 쓰고 올리는 건 사용자가 한다.",
+  "version": "1.0.0",
+  "author": { "name": "D-Sup" },
+  "license": "MIT",
+  "keywords": ["threads", "쓰레드", "korean", "content", "writing", "humanizer", "social"]
+}

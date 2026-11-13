@@ -1,0 +1,14 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "threads-skill",
+  "description": "쓰레드(Threads) 운영 스킬 묶음",
+  "owner": { "name": "D-Sup" },
+  "plugins": [
+    {
+      "name": "threads-skill",
+      "description": "쓰레드 계정 운영용 Claude 스킬 11개 (한국어 훅 점수기, 500자 검사기, 벤치마킹, 성과 분석, AI 티 지우기)",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}
