@@ -37,10 +37,10 @@ Then run `/th-voice` and paste a few of your own posts.
 | command | what it does |
 | --- | --- |
 | `/th-voice` | Builds `~/.claude/threads/voice.md` (niche, voice, real numbers you can use). Every skill reads it. |
-| `/th-post` | One idea into a post or a 3-6 part chain. Three hooks from 22 formulas, scored, then a 500-char check. |
+| `/th-post` | One idea into a post or a 3-6 part chain. Three hooks from the same 26 formulas as the original, scored, then a 500-char check. |
 | `/th-source` | Turns a link, doc, release note or your own work log into a useful post. Facts checked against the source, cited. |
 | `/th-viral` | Finds what is working in your niche, ranked by multiple over each account's own median views. |
-| `/th-plan` | The week, 1-2 posts a day by default, plus 10 accounts to reply to. |
+| `/th-plan` | The week, 4-5 posts by default (or the count in voice.md), plus 10 accounts to reply to. |
 | `/th-reply` | Triage and draft replies under your own post. |
 | `/th-comment` | Replies on other people's posts, nine types, never "so true". |
 | `/th-repurpose` | One long asset into a week of standalone posts. |
