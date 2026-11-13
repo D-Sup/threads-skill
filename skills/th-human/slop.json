@@ -1,0 +1,549 @@
+{
+  "version": "1.0",
+  "note": "humanize.py와 detect.py가 쓰는 목록. 한국어 AI 글에서 반복해서 보이는 말투를 모았다. words/phrases는 자동으로 바꾸거나 지우고(replace가 빈 문자열이면 삭제), structures는 표시만 한다(문장 모양을 바꾸려면 판단이 필요해서). 내가 원래 자주 쓰는 말이 여기 있으면 지워서 쓰면 된다. 마지막 묶음은 영어 글용.",
+  "invisible": [
+    {
+      "cp": "U+200B",
+      "name": "ZERO WIDTH SPACE"
+    },
+    {
+      "cp": "U+200C",
+      "name": "ZERO WIDTH NON-JOINER"
+    },
+    {
+      "cp": "U+200D",
+      "name": "ZERO WIDTH JOINER"
+    },
+    {
+      "cp": "U+2060",
+      "name": "WORD JOINER"
+    },
+    {
+      "cp": "U+FEFF",
+      "name": "BYTE ORDER MARK"
+    },
+    {
+      "cp": "U+00AD",
+      "name": "SOFT HYPHEN"
+    },
+    {
+      "cp": "U+180E",
+      "name": "MONGOLIAN VOWEL SEPARATOR"
+    },
+    {
+      "cp": "U+2061",
+      "name": "FUNCTION APPLICATION"
+    },
+    {
+      "cp": "U+2062",
+      "name": "INVISIBLE TIMES"
+    },
+    {
+      "cp": "U+2063",
+      "name": "INVISIBLE SEPARATOR"
+    },
+    {
+      "cp": "U+2064",
+      "name": "INVISIBLE PLUS"
+    },
+    {
+      "cp": "U+00A0",
+      "name": "NO-BREAK SPACE",
+      "to": " "
+    },
+    {
+      "cp": "U+202F",
+      "name": "NARROW NO-BREAK SPACE",
+      "to": " "
+    },
+    {
+      "cp": "U+2009",
+      "name": "THIN SPACE",
+      "to": " "
+    },
+    {
+      "cp": "U+200A",
+      "name": "HAIR SPACE",
+      "to": " "
+    },
+    {
+      "cp": "U+3000",
+      "name": "IDEOGRAPHIC SPACE",
+      "to": " "
+    }
+  ],
+  "typographic": [
+    {
+      "from": "—",
+      "name": "EM DASH",
+      "to": ", "
+    },
+    {
+      "from": "–",
+      "name": "EN DASH",
+      "to": "-"
+    },
+    {
+      "from": "“",
+      "name": "LEFT DOUBLE QUOTE",
+      "to": "\""
+    },
+    {
+      "from": "”",
+      "name": "RIGHT DOUBLE QUOTE",
+      "to": "\""
+    },
+    {
+      "from": "‘",
+      "name": "LEFT SINGLE QUOTE",
+      "to": "'"
+    },
+    {
+      "from": "’",
+      "name": "RIGHT SINGLE QUOTE",
+      "to": "'"
+    },
+    {
+      "from": "…",
+      "name": "ELLIPSIS",
+      "to": "..."
+    },
+    {
+      "from": "•",
+      "name": "BULLET",
+      "to": "-"
+    }
+  ],
+  "phrases": [
+    {
+      "find": "에 대해 알아보겠습니다",
+      "replace": "",
+      "family": "서론"
+    },
+    {
+      "find": "에 대해 알아볼게요",
+      "replace": "",
+      "family": "서론"
+    },
+    {
+      "find": "함께 알아볼까요?",
+      "replace": "",
+      "family": "서론"
+    },
+    {
+      "find": "함께 알아보겠습니다",
+      "replace": "",
+      "family": "서론"
+    },
+    {
+      "find": "자세히 살펴보겠습니다",
+      "replace": "",
+      "family": "서론"
+    },
+    {
+      "find": "지금부터 소개해 드리겠습니다",
+      "replace": "",
+      "family": "서론"
+    },
+    {
+      "find": "오늘은 여러분께",
+      "replace": "",
+      "family": "서론"
+    },
+    {
+      "find": "급변하는 시대에",
+      "replace": "요즘",
+      "family": "서론"
+    },
+    {
+      "find": "빠르게 변화하는 오늘날",
+      "replace": "요즘",
+      "family": "서론"
+    },
+    {
+      "find": "디지털 시대에",
+      "replace": "요즘",
+      "family": "서론"
+    },
+    {
+      "find": "AI 시대에",
+      "replace": "요즘",
+      "family": "서론"
+    },
+    {
+      "find": "결론적으로,",
+      "replace": "",
+      "family": "맺음"
+    },
+    {
+      "find": "결론적으로",
+      "replace": "",
+      "family": "맺음"
+    },
+    {
+      "find": "요약하자면,",
+      "replace": "",
+      "family": "맺음"
+    },
+    {
+      "find": "요약하자면",
+      "replace": "",
+      "family": "맺음"
+    },
+    {
+      "find": "정리하자면,",
+      "replace": "",
+      "family": "맺음"
+    },
+    {
+      "find": "종합해 보면",
+      "replace": "",
+      "family": "맺음"
+    },
+    {
+      "find": "도움이 되셨기를 바랍니다",
+      "replace": "",
+      "family": "맺음"
+    },
+    {
+      "find": "도움이 되셨으면 좋겠습니다",
+      "replace": "",
+      "family": "맺음"
+    },
+    {
+      "find": "여러분의 생각은 어떠신가요?",
+      "replace": "",
+      "family": "맺음"
+    },
+    {
+      "find": "여러분은 어떻게 생각하시나요?",
+      "replace": "",
+      "family": "맺음"
+    },
+    {
+      "find": "앞으로가 더욱 기대됩니다",
+      "replace": "",
+      "family": "맺음"
+    },
+    {
+      "find": "귀추가 주목됩니다",
+      "replace": "",
+      "family": "맺음"
+    },
+    {
+      "find": "주목할 만한",
+      "replace": "눈에 띄는",
+      "family": "과장"
+    },
+    {
+      "find": "판도를 바꿀",
+      "replace": "크게 바꿀",
+      "family": "과장"
+    },
+    {
+      "find": "판도를 바꾸는",
+      "replace": "크게 바꾸는",
+      "family": "과장"
+    },
+    {
+      "find": "게임 체인저",
+      "replace": "큰 변화",
+      "family": "과장"
+    },
+    {
+      "find": "새로운 지평을 열",
+      "replace": "새로 가능하게 하",
+      "family": "과장"
+    },
+    {
+      "find": "차원이 다른",
+      "replace": "확실히 다른",
+      "family": "과장"
+    },
+    {
+      "find": "중요한 역할을 합니다",
+      "replace": "중요합니다",
+      "family": "상투"
+    },
+    {
+      "find": "중요한 역할을 한다",
+      "replace": "중요하다",
+      "family": "상투"
+    },
+    {
+      "find": "핵심적인 역할을",
+      "replace": "큰 역할을",
+      "family": "상투"
+    },
+    {
+      "find": "깊이 파고들어",
+      "replace": "자세히",
+      "family": "상투"
+    },
+    {
+      "find": "이를 통해",
+      "replace": "그래서",
+      "family": "접속"
+    },
+    {
+      "find": "이를 바탕으로",
+      "replace": "그래서",
+      "family": "접속"
+    },
+    {
+      "find": "더 나아가",
+      "replace": "게다가",
+      "family": "접속"
+    },
+    {
+      "find": "꿀팁 대방출",
+      "replace": "팁",
+      "family": "쓰레드"
+    },
+    {
+      "find": "완벽 정리",
+      "replace": "정리",
+      "family": "쓰레드"
+    },
+    {
+      "find": "총정리",
+      "replace": "정리",
+      "family": "쓰레드"
+    },
+    {
+      "find": "끝판왕",
+      "replace": "제일 나은 것",
+      "family": "쓰레드"
+    },
+    {
+      "find": "이거 모르면 손해",
+      "replace": "",
+      "family": "쓰레드"
+    },
+    {
+      "find": "놓치지 마세요",
+      "replace": "",
+      "family": "쓰레드"
+    },
+    {
+      "find": "꼭 기억하세요",
+      "replace": "",
+      "family": "쓰레드"
+    },
+    {
+      "find": "꼭 알아두세요",
+      "replace": "",
+      "family": "쓰레드"
+    },
+    {
+      "find": "in today's fast-paced world",
+      "replace": "right now",
+      "family": "english"
+    },
+    {
+      "find": "in the ever-evolving landscape of",
+      "replace": "in",
+      "family": "english"
+    },
+    {
+      "find": "it's important to note that",
+      "replace": "",
+      "family": "english"
+    },
+    {
+      "find": "game-changer",
+      "replace": "big shift",
+      "family": "english"
+    },
+    {
+      "find": "극대화할",
+      "replace": "최대한 늘릴",
+      "family": "업무체"
+    },
+    {
+      "find": "극대화하",
+      "replace": "최대한 늘리",
+      "family": "업무체"
+    },
+    {
+      "find": "극대화",
+      "replace": "최대화",
+      "family": "업무체"
+    }
+  ],
+  "words": [
+    {
+      "find": "혁신적인",
+      "replace": "새로운",
+      "family": "과장"
+    },
+    {
+      "find": "획기적인",
+      "replace": "새로운",
+      "family": "과장"
+    },
+    {
+      "find": "놀라운",
+      "replace": "",
+      "family": "과장"
+    },
+    {
+      "find": "무궁무진한",
+      "replace": "많은",
+      "family": "과장"
+    },
+    {
+      "find": "최적화된",
+      "replace": "맞춘",
+      "family": "업무체"
+    },
+    {
+      "find": "원활한",
+      "replace": "매끄러운",
+      "family": "업무체"
+    },
+    {
+      "find": "활용하여",
+      "replace": "써서",
+      "family": "업무체"
+    },
+    {
+      "find": "활용해",
+      "replace": "써서",
+      "family": "업무체"
+    },
+    {
+      "find": "시너지",
+      "replace": "같이 쓸 때 효과",
+      "family": "업무체"
+    },
+    {
+      "find": "인사이트",
+      "replace": "배운 점",
+      "family": "업무체"
+    },
+    {
+      "find": "패러다임",
+      "replace": "방식",
+      "family": "업무체"
+    },
+    {
+      "find": "레버리지",
+      "replace": "지렛대",
+      "family": "업무체"
+    },
+    {
+      "find": "여정",
+      "replace": "과정",
+      "family": "상투"
+    },
+    {
+      "find": "선사합니다",
+      "replace": "줍니다",
+      "family": "상투"
+    },
+    {
+      "find": "선사한다",
+      "replace": "준다",
+      "family": "상투"
+    },
+    {
+      "find": "delve",
+      "replace": "look",
+      "family": "english"
+    },
+    {
+      "find": "leverage",
+      "replace": "use",
+      "family": "english"
+    },
+    {
+      "find": "seamless",
+      "replace": "smooth",
+      "family": "english"
+    },
+    {
+      "find": "robust",
+      "replace": "solid",
+      "family": "english"
+    },
+    {
+      "find": "crucial",
+      "replace": "important",
+      "family": "english"
+    },
+    {
+      "find": "unlock",
+      "replace": "get",
+      "family": "english"
+    }
+  ],
+  "structures": [
+    {
+      "id": "not-just",
+      "regex": "(단순히|단순한) [^.!?\\n]{1,40}(가|이)? ?아니라",
+      "name": "'단순히 X가 아니라 Y'",
+      "fix": "Y만 말한다. 뒤집는 구조 자체가 AI 티다."
+    },
+    {
+      "id": "not-only",
+      "regex": "뿐만 아니라[^.!?\\n]{1,60}도",
+      "name": "'X뿐만 아니라 Y도'",
+      "fix": "두 문장으로 나누거나 약한 쪽을 지운다."
+    },
+    {
+      "id": "isnt-about",
+      "regex": "(이것은|이건|핵심은) [^.!?\\n]{1,40}(가|이) 아닙니다[.!] ?[^.!?\\n]{0,40}입니다",
+      "name": "'X가 아닙니다. Y입니다'",
+      "fix": "Y부터 말한다."
+    },
+    {
+      "id": "rhetorical",
+      "regex": "(?m)^\\s*(결과는|이유는|비결은|정답은|핵심은)\\s*(\\?|요\\?)\\s*$",
+      "name": "한 줄짜리 수사 질문('결과는?')",
+      "fix": "질문 없이 바로 답을 쓴다."
+    },
+    {
+      "id": "ordinal",
+      "regex": "첫째[^\\n]{0,80}\\n?[^\\n]{0,200}둘째[^\\n]{0,200}셋째",
+      "name": "'첫째, 둘째, 셋째' 나열",
+      "fix": "번호 목록이 필요하면 1. 2. 3.으로, 아니면 하나만 남긴다."
+    },
+    {
+      "id": "emoji-bullets",
+      "regex": "(?m)^\\s*[\\u2600-\\u27BF\\U0001F300-\\U0001FAFF]\\s?[^\\n]+\\n\\s*[\\u2600-\\u27BF\\U0001F300-\\U0001FAFF]",
+      "name": "이모지 글머리 목록(✅ 🔥 📌)",
+      "fix": "이모지를 빼고 짧은 문장이나 숫자 목록으로."
+    },
+    {
+      "id": "triple-exclaim",
+      "regex": "!{2,}",
+      "name": "느낌표 연타",
+      "fix": "느낌표는 하나, 아니면 마침표."
+    },
+    {
+      "id": "reflex-bait",
+      "regex": "(팔로우 ?하고|저장해 ?두|저장 필수|공유 부탁|좋아요 ?부탁|끝까지 읽)",
+      "name": "반사적인 부탁('저장 필수', '팔로우하고')",
+      "fix": "정말 저장할 가치가 있으면 부탁 없이도 저장한다. 지운다."
+    },
+    {
+      "id": "tag-wall",
+      "regex": "(#[^\\s#]+\\s*){3,}",
+      "name": "태그 벽",
+      "fix": "쓰레드는 주제 태그 하나만 붙는다. 하나만 남긴다."
+    },
+    {
+      "id": "uniform-formal",
+      "regex": "((니다|습니다)\\.\\s*){4,}",
+      "name": "'~니다.' 네 번 이상 연속",
+      "fix": "끝맺음을 섞는다. 짧은 문장, 질문, 반말 한 줄."
+    },
+    {
+      "id": "english-not-just",
+      "regex": "(?i)\\bit'?s not (?:just|only) [^.!?\\n]{2,60}[,.] it'?s\\b",
+      "name": "\"It's not just X, it's Y\"",
+      "fix": "Say the one thing you mean."
+    }
+  ]
+}
