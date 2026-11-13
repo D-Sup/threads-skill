@@ -32,8 +32,8 @@ import sys
 HANGUL_RE = re.compile(r"[가-힣]")
 TOKEN_RE = re.compile(r"\S+")
 LATIN_WORD_RE = re.compile(r"[A-Za-z][A-Za-z'’-]*")
-HASHTAG_RE = re.compile(r"(?:^|\s)#[^\s#]+")
-EMOJI_RE = re.compile(r"[\U0001F300-\U0001FAFF☀-➿]")
+HASHTAG_RE = re.compile(r"(?:^|(?<=\s))#(?!\d+(?:\s|$|[.,!?)]))[^\s#]+")  # "#1" 같은 순번은 태그 아님
+EMOJI_RE = re.compile(r"[\U0001F000-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF\u2300-\u23FF]")
 
 # 숫자: 아라비아 숫자 + 단위, 한국어 수 표현
 NUMBER_RE = re.compile(
@@ -308,8 +308,12 @@ def main():
     if args.hook:
         lines = [args.hook]
     else:
-        raw = sys.stdin.read() if args.input == "-" else open(args.input, encoding="utf-8").read()
-        lines = [l.strip() for l in raw.splitlines() if l.strip()]
+        try:
+            raw = sys.stdin.read() if args.input == "-" else open(args.input, encoding="utf-8-sig").read()
+        except OSError as e:
+            print(f"파일을 못 읽었다: {e}", file=sys.stderr)
+            sys.exit(2)
+        lines = [l.strip().lstrip("\ufeff") for l in raw.splitlines() if l.strip()]
     if not lines:
         print("채점할 내용이 없다", file=sys.stderr)
         sys.exit(2)
@@ -317,7 +321,7 @@ def main():
     payload = [score_payload(l) for l in lines]
     if args.json:
         print(json.dumps(payload if len(payload) > 1 else payload[0], indent=2, ensure_ascii=False))
-        return
+        sys.exit(0 if max(p["score"] for p in payload) >= 70 else 1)
     if len(payload) == 1:
         render_one(lines[0], *run(lines[0]))
     else:

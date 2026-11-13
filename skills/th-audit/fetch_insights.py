@@ -36,11 +36,19 @@ FIELDS = "id,text,timestamp,permalink,media_type,is_quote_post,topic_tag"
 METRICS = "views,likes,replies,reposts,quotes,shares"
 
 
-def get(url, params, token):
+def get(url, params, token, tries=3):
+    """요청 한도(429)나 서버 오류(5xx)면 잠깐 쉬고 두 번 더 시도한다."""
     q = dict(params, access_token=token)
     req = urllib.request.Request(url + "?" + urllib.parse.urlencode(q), headers={"User-Agent": "threads-skill/1.0"})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return json.loads(r.read().decode("utf-8"))
+    for attempt in range(tries):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return json.loads(r.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 500, 502, 503, 504) and attempt < tries - 1:
+                time.sleep(5 * (attempt + 1))
+                continue
+            raise
 
 
 def pick_host(token):
@@ -62,7 +70,11 @@ def fetch_posts(host, token, limit, since=None):
         params["since"] = since
     url, posts = host + "/me/threads", []
     while url and len(posts) < limit:
-        data = get(url, params, token)
+        try:
+            data = get(url, params, token)
+        except urllib.error.HTTPError as e:
+            # 오류 메시지에 토큰이 섞여 나오지 않게 코드와 본문 앞부분만 보여준다
+            sys.exit(f"글 목록을 못 읽었다: HTTP {e.code} {e.read().decode('utf-8', 'ignore')[:200]}")
         posts += data.get("data", [])
         nxt = data.get("paging", {}).get("next")
         if not nxt:
@@ -100,12 +112,15 @@ def main():
     posts = fetch_posts(host, token, args.limit, args.since)
     print(f"글 {len(posts)}개를 찾았다. 성과를 읽는 중...", file=sys.stderr)
     for i, p in enumerate(posts, 1):
+        if p.get("media_type") == "REPOST_FACADE":
+            continue  # 남의 글을 리포스트한 것. 내 성과가 아니라서 건너뛴다
         p.update(fetch_metrics(host, token, p["id"]))
         if i % 10 == 0:
             print(f"  {i}/{len(posts)}", file=sys.stderr)
         time.sleep(0.2)   # 요청 한도를 넉넉히 지킨다
     out = os.path.expanduser(args.out)
-    os.makedirs(os.path.dirname(out), exist_ok=True)
+    if os.path.dirname(out):
+        os.makedirs(os.path.dirname(out), exist_ok=True)
     json.dump({"fetched_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "host": host, "posts": posts},
               open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
     print(f"저장: {out}\n다음: python3 audit.py {args.out}", file=sys.stderr)

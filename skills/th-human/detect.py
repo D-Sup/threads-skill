@@ -32,12 +32,17 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 LEX = os.path.join(HERE, "slop.json")
 
-SENT_RE = re.compile(r"[^.!?\n。]+[.!?。]*")
+# 문장 끝: . ! ? 。 뒤에 공백·줄끝이 올 때만. "3.5배", "github.com" 의 점에서 자르지 않는다.
+SENT_RE = re.compile(r"[^\n]+?(?:[.!?。]+(?=\s|$)|$)", re.M)
+URL_RE = re.compile(r"https?://\S+|www\.\S+")
+CODE_RE = re.compile(r"^[ \t]*(```|~~~)[^\n]*\n.*?^[ \t]*\1[^\n]*$|`[^`\n]+`", re.M | re.S)
 TOKEN_RE = re.compile(r"\S+")
 NUMBERS = re.compile(r"\d[\d,.]*\s*(%|원|만|억|배|시간|분|초|일|주|개월|년|명|개|번)?")
 PROPER = re.compile(r"\b[A-Z][A-Za-z0-9]+\b|\b[A-Z]{2,}\b")
 QUOTED = re.compile(r"[\"“'‘][^\"”'’]{2,40}[\"”'’]")
-FIRST_PERSON = re.compile(r"(^|\s)(나|내가|내|저는|제가|제|저|우리|저희|난|전)(\s|는|가|의|도|한테|$)|\b(i|my|me|we|our)\b", re.I)
+# 조사 뒤가 끊겨야 1인칭이다. '제도', '나가서', '전에'는 1인칭이 아니다.
+FIRST_PERSON = re.compile(r"(^|\s)(나|내가|내|저는|제가|제|저|우리|저희|난|전)(는|가|의|도|한테)?(?=\s|$|[.,!?])"
+                          r"|\b(i|my|me|we|our)\b", re.I)
 SECOND_PERSON = re.compile(r"(당신|너|니가|네가|여러분|\byou\b|\byour\b)", re.I)
 CASUAL_END = re.compile(r"(요|죠|네|지|음|함|임|듯|ㅋ+|ㅎ+|다|어|야|까|걸|데)[.!?~]*$")
 FORMAL_END = re.compile(r"(니다|습니다|십시오)[.!?]*$")
@@ -89,7 +94,8 @@ def slop_hits(text, lex):
     hits = []
     for item in lex["phrases"] + lex["words"]:
         f = item["find"]
-        pat = re.compile(r"\b" + re.escape(f) + r"\b", re.I) if re.search(r"[A-Za-z]", f) else re.compile(re.escape(f))
+        pat = (re.compile(r"(?<![A-Za-z])" + re.escape(f) + r"(?![A-Za-z])", re.I)
+               if re.search(r"[A-Za-z]", f) else re.compile(re.escape(f)))
         n = len(pat.findall(text))
         if n:
             hits.append((f, n))
@@ -146,6 +152,8 @@ NAMES = {"BURSTINESS": "문장 리듬", "SPECIFICITY": "구체성", "SLOP": "상
 
 def run(text, lex=None):
     lex = lex or load()
+    # 코드와 링크는 사람이 쓴 문장이 아니라서 빼고 잰다.
+    text = URL_RE.sub(" ", CODE_RE.sub(" ", text.lstrip("\ufeff")))
     res = {
         "BURSTINESS": check_burstiness(text),
         "SPECIFICITY": check_specificity(text),
@@ -186,8 +194,14 @@ def main():
     args = ap.parse_args()
     lex = load()
     results = []
+    if len(args.inputs) > 2:
+        print("한 번에 두 개까지만 비교한다. 앞의 두 개만 본다.", file=sys.stderr)
     for path in args.inputs[:2]:
-        text = sys.stdin.read() if path == "-" else open(path, encoding="utf-8").read()
+        try:
+            text = sys.stdin.read() if path == "-" else open(path, encoding="utf-8-sig").read()
+        except OSError as e:
+            print(f"파일을 못 읽었다: {e}", file=sys.stderr)
+            sys.exit(2)
         res, overall, verdict = run(text, lex)
         results.append((path, res, overall, verdict))
     if args.json:

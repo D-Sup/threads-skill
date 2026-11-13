@@ -413,6 +413,46 @@
       "family": "업무체"
     },
     {
+      "find": "활용해 보",
+      "replace": "써 보",
+      "family": "업무체"
+    },
+    {
+      "find": "활용해서",
+      "replace": "써서",
+      "family": "업무체"
+    },
+    {
+      "find": "활용해요",
+      "replace": "써요",
+      "family": "업무체"
+    },
+    {
+      "find": "활용해야",
+      "replace": "써야",
+      "family": "업무체"
+    },
+    {
+      "find": "활용하면",
+      "replace": "쓰면",
+      "family": "업무체"
+    },
+    {
+      "find": "활용했",
+      "replace": "썼",
+      "family": "업무체"
+    },
+    {
+      "find": "활용합니다",
+      "replace": "씁니다",
+      "family": "업무체"
+    },
+    {
+      "find": "활용한다",
+      "replace": "쓴다",
+      "family": "업무체"
+    },
+    {
       "find": "시너지",
       "replace": "같이 쓸 때 효과",
       "family": "업무체"

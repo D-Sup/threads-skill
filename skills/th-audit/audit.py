@@ -52,25 +52,48 @@ FIELDS = ("views", "likes", "replies", "reposts", "quotes", "shares")
 
 
 def read_posts(path):
-    raw = sys.stdin.read() if path == "-" else open(os.path.expanduser(path), encoding="utf-8").read()
+    try:
+        raw = sys.stdin.read() if path == "-" else open(os.path.expanduser(path), encoding="utf-8-sig").read()
+    except OSError as e:
+        sys.exit(f"파일을 못 읽었다: {e}")
+    if not raw.strip():
+        return []
     s = raw.lstrip()
     if s.startswith("[") or s.startswith("{"):
-        data = json.loads(raw)
-        posts = data["posts"] if isinstance(data, dict) else data
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError as e:
+            sys.exit(f"JSON을 못 읽었다: {e}")
+        posts = (data.get("posts") if isinstance(data, dict) else data) or []
+        if not isinstance(posts, list):
+            posts = []
     else:
-        delim = "\t" if "\t" in raw.splitlines()[0] else ","
+        first = next(l for l in raw.splitlines() if l.strip())
+        delim = "\t" if "\t" in first else ","
         posts = list(csv.DictReader(io.StringIO(raw), delimiter=delim))
     out = []
     for p in posts:
+        if not isinstance(p, dict):
+            continue
         p = {str(k).strip().lower(): v for k, v in p.items()}
+        if str(p.get("media_type", "")).upper() == "REPOST_FACADE":
+            continue  # 남의 글을 리포스트한 것. 내 글이 아니다
         text = (p.get("text") or p.get("hook") or "").strip()
         row = {"text": text, "hook": text.splitlines()[0].strip() if text else "",
                "date": p.get("timestamp") or p.get("date") or "", "permalink": p.get("permalink", ""),
                "is_chain": str(p.get("is_chain", p.get("type", ""))).lower() in ("true", "1", "chain", "연결글")}
         for f in FIELDS:
             row[f] = num(p.get(f))
-        if row["hook"] and row["views"]:
+        if row["hook"] and (row["views"] is not None or row["likes"] is not None):
             out.append(row)
+    # 쓰레드 API는 views를 '개발 중'으로 표시한다. 조회수가 하나도 없으면 좋아요로 대신 잰다.
+    if out and not any(r["views"] for r in out):
+        for r in out:
+            r["views"], r["basis"] = r["likes"] or 0, "좋아요"
+    else:
+        out = [r for r in out if r["views"]]
+        for r in out:
+            r["basis"] = "조회수"
     return out
 
 
@@ -106,7 +129,7 @@ def analyse(posts):
         p["hook_score"] = round(score_hook(p["hook"])[1], 1) if score_hook else None
     ranked = sorted(posts, key=lambda p: (-(p["outlier"] or 0), -(p["reply_k"] or 0)))
     k = min(5, max(1, len(ranked) // 3))
-    top, bottom = ranked[:k], ranked[-k:]
+    top, bottom = ranked[:k], ranked[k:][-k:]  # 글이 적어도 위·아래가 겹치지 않게
 
     def mean(items, key):
         vals = [i[key] for i in items if i.get(key) is not None]
@@ -142,6 +165,8 @@ def analyse(posts):
     by_chain = group(lambda p: "연결글" if p["is_chain"] else "단독")
     if len(by_chain) > 1:
         findings.append("형식별: " + ", ".join(f"{k2} {m}x({n})" for k2, (m, n) in by_chain.items()))
+    if posts and posts[0].get("basis") == "좋아요":
+        findings.insert(0, "조회수가 비어 있어서 좋아요 기준으로 쟀다. '천 조회당' 값은 '천 좋아요당'이다.")
     return {"n": len(posts), "median_views": med_views, "top": top, "bottom": bottom,
             "findings": findings, "by_hour": group(lambda p: p["hour"]), "posts": ranked}
 
@@ -155,7 +180,8 @@ def render(a, out=sys.stdout):
         hook = p["hook"] if len(p["hook"]) <= 30 else p["hook"][:29] + "…"
         rk = p["reply_k"] if p["reply_k"] is not None else "-"
         sk = p["spread_k"] if p["spread_k"] is not None else "-"
-        return f"  {p['outlier']:>5.1f}x  {p['views']:>7,}회  답글 {rk:>5}/천  퍼감 {sk:>5}/천  [{p['formula']}] {hook}"
+        mult = f"{p['outlier']:>5.1f}" if p["outlier"] is not None else "    ?"
+        return f"  {mult}x  {p['views']:>7,}{'회' if p.get('basis') != '좋아요' else '♥'}  답글 {rk:>5}/천  퍼감 {sk:>5}/천  [{p['formula']}] {hook}"
 
     print("\n위", file=out)
     for p in a["top"]:

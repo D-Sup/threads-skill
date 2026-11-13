@@ -66,7 +66,7 @@ def num(v):
     s = str(v).strip().replace(",", "")
     if not s:
         return None
-    m = re.match(r"^([\d.]+)\s*(만|천|억|k|K|m|M)?", s)
+    m = re.match(r"^(\d+(?:\.\d+)?)\s*(만|천|억|k|K|m|M)?", s)  # "1.2.3", "." 에서 죽지 않게
     if not m:
         return None
     n = float(m.group(1))
@@ -75,7 +75,11 @@ def num(v):
 
 
 def read_rows(path):
-    raw = sys.stdin.read() if path == "-" else open(path, encoding="utf-8").read()
+    try:
+        raw = sys.stdin.read() if path == "-" else open(os.path.expanduser(path), encoding="utf-8-sig").read()
+    except OSError as e:
+        print(f"파일을 못 읽었다: {e}", file=sys.stderr)
+        sys.exit(2)
     lines = [l for l in raw.splitlines() if l.strip() and not l.lstrip().startswith("#")]
     if not lines:
         return []
@@ -111,7 +115,9 @@ def analyse(rows, formulas):
             r["hook_score"], r["hook_verdict"] = None, None
     ranked = sorted(rows, key=lambda r: -(r["outlier"] or 0))
     third = max(1, len(ranked) // 3)
-    top, bottom = ranked[:third], ranked[-third:]
+    # 글이 적으면 위와 아래가 겹친다. 겹치면 아래는 비워 둔다(같은 글끼리 비교하지 않게).
+    top = ranked[:third]
+    bottom = ranked[third:][-third:]
 
     def med(items, key):
         vals = [i[key] for i in items if i.get(key) is not None]
@@ -151,7 +157,7 @@ def render(a, out=sys.stdout):
     print("=" * 78, file=out)
     print("\n배수 순위", file=out)
     for r in a["posts"]:
-        mult = f"{r['outlier']:>5.1f}x" if r["outlier"] else "    ?"
+        mult = f"{r['outlier']:>5.1f}x" if r["outlier"] is not None else "    ?"
         hs = f"{r['hook_score']:.0f}" if r["hook_score"] is not None else "-"
         fid = f"#{r['formula_id']}" if r["formula_id"] else "-"
         hook = r["hook"] if len(r["hook"]) <= 34 else r["hook"][:33] + "…"
@@ -166,7 +172,7 @@ def render(a, out=sys.stdout):
     print(f"  천 조회당 답글   {a['top_reply_rate']} vs {a['bottom_reply_rate']}", file=out)
     print(f"\n분류 안 됨 ({len(a['unclassified'])}개) - 직접 읽어볼 것. 새 공식일 수 있다.", file=out)
     for r in a["unclassified"][:8]:
-        print(f"  {r['outlier'] or '?'}x  {r['hook']}", file=out)
+        print(f"  {r['outlier'] if r['outlier'] is not None else '?'}x  {r['hook']}", file=out)
     print("", file=out)
 
 
@@ -175,7 +181,9 @@ def to_markdown(a):
              f"- 신뢰도: {confidence(a['n'], a['accounts'])}", "", "## 배수 순위", "",
              "| 배수 | 공식 | 계정 | 첫 줄 |", "|---|---|---|---|"]
     for r in a["posts"]:
-        lines.append(f"| {r['outlier'] or '?'}x | {r['formula']} | {r.get('account', '')} | {r['hook']} |")
+        cell = lambda v: str(v).replace("|", "\\|").replace("\n", " ")  # noqa: E731  표가 깨지지 않게
+        mult = r["outlier"] if r["outlier"] is not None else "?"
+        lines.append(f"| {mult}x | {cell(r['formula'])} | {cell(r.get('account', ''))} | {cell(r['hook'])} |")
     lines += ["", "## 위 1/3에 많이 나온 공식", ""]
     lines += [f"- {n}: 위 {c}개 / 아래 {a['bottom_formulas'].get(n, 0)}개" for n, c in a["top_formulas"]]
     lines += ["", "## 내 버전 (th-viral이 채운다)", "", "- ", ""]
@@ -199,7 +207,8 @@ def main():
         render(a)
     if args.out:
         path = os.path.expanduser(args.out)
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        if os.path.dirname(path):
+            os.makedirs(os.path.dirname(path), exist_ok=True)
         open(path, "w", encoding="utf-8").write(to_markdown(a))
         print(f"저장: {path}")
 

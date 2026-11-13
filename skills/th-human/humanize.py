@@ -29,6 +29,14 @@ import unicodedata
 HERE = os.path.dirname(os.path.abspath(__file__))
 LEX = os.path.join(HERE, "slop.json")
 URL_RE = re.compile(r"https?://\S+|www\.\S+")
+# 코드 블록과 `인라인 코드` 안은 글이 아니라 코드라서 건드리지 않는다.
+CODE_RE = re.compile(r"^[ \t]*(```|~~~)[^\n]*\n.*?^[ \t]*\1[^\n]*$|`[^`\n]+`", re.M | re.S)
+# 이모지 사이의 ZWJ(👨‍💻)와 이모지 뒤 꾸밈 문자는 이모지 일부라 남긴다.
+EMOJI_CH = r"[\U0001F000-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF\u2300-\u23FF]"
+ZWJ_KEEP_RE = re.compile(EMOJI_CH + r"[\uFE0F\U0001F3FB-\U0001F3FF]?\u200D(?=" + EMOJI_CH + ")")
+# 한국어 낱말 끝이 활용 어미면(활용해, 혁신적인) 뒤에 한글이 바로 붙을 때 바꾸지 않는다.
+# '활용해요'를 '써서요'로 바꾸는 식의 비문을 막는다. 명사(인사이트, 여정)는 뒤에 붙어도 바꾼다.
+VERB_END = set("해여한된인운다요")
 
 
 def load():
@@ -36,13 +44,17 @@ def load():
 
 
 def protect_urls(text):
+    """URL, 코드, 이모지 ZWJ 묶음을 자리표시로 바꿔 둔다. 이름은 예전 그대로 둔다."""
     urls = []
 
     def keep(m):
         urls.append(m.group(0))
         return f"\x00{len(urls) - 1}\x00"
 
-    return URL_RE.sub(keep, text), urls
+    text = CODE_RE.sub(keep, text)
+    text = URL_RE.sub(keep, text)
+    text = ZWJ_KEEP_RE.sub(keep, text)
+    return text, urls
 
 
 def restore_urls(text, urls):
@@ -115,12 +127,15 @@ def swap_lexicon(text, lex, log):
     for item in items:
         find, rep = item["find"], item["replace"]
         if re.search(r"[A-Za-z]", find):
-            pat = re.compile(r"\b" + re.escape(find) + r"\b", re.I)
+            # \b는 한글 앞뒤에서 안 걸린다(leverage를). 영문자가 아닌 것과의 경계로 본다.
+            pat = re.compile(r"(?<![A-Za-z])" + re.escape(find) + r"(?![A-Za-z])", re.I)
             hits = pat.findall(text)
             if hits:
                 text = pat.sub(rep, text)
         else:
-            pat = re.compile(re.escape(find) + r"(으로|로|을|를|이|가|은|는|과|와)?")
+            tail = r"(?![가-힣])" if find[-1] in VERB_END else ""
+            # 조사는 뒤가 끊길 때만 조사다. '인사이트이다'의 '이'는 조사가 아니다.
+            pat = re.compile(re.escape(find) + tail + r"(?:(으로|로|을|를|이|가|은|는|과|와)(?![가-힣]))?")
             hits = pat.findall(text)
             if hits:
                 text = pat.sub(lambda m: rep + (fit_particle(rep, m.group(1)) if rep else (m.group(1) or "")), text)
@@ -129,7 +144,7 @@ def swap_lexicon(text, lex, log):
     # 지운 자리에 남은 공백·문장부호 정리
     text = re.sub(r"[ \t]{2,}", " ", text)
     text = re.sub(r"[ \t]+([,.!?])", r"\1", text)
-    text = re.sub(r"(?m)^[ \t]+", "", text)
+    text = re.sub(r"(?m)^[ \t]+", "", text)  # 코드는 자리표시로 빼 뒀으니 들여쓰기가 깨지지 않는다
     text = re.sub(r"(?m)^[,.]\s*", "", text)
     text = re.sub(r"([!?.])\s*,", r"\1", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
@@ -163,7 +178,11 @@ def main():
     ap.add_argument("--report", action="store_true")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
-    raw = sys.stdin.read() if args.input == "-" else open(args.input, encoding="utf-8").read()
+    try:
+        raw = sys.stdin.read() if args.input == "-" else open(args.input, encoding="utf-8-sig").read()
+    except OSError as e:
+        print(f"파일을 못 읽었다: {e}", file=sys.stderr)
+        sys.exit(2)
     clean, log, flags = humanize(raw)
     if args.json:
         print(json.dumps({"text": clean, "changes": log, "flags": flags}, ensure_ascii=False, indent=2))
